@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Teryaq.Domain</RootNamespace>
+    <AssemblyName>Teryaq.Domain</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Teryaq.Infrastructure" />
+    <InternalsVisibleTo Include="Teryaq.UnitTests" />
+    <InternalsVisibleTo Include="Teryaq.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

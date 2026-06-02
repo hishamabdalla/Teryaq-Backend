@@ -1,0 +1,12 @@
+﻿<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Teryaq.Domain/Teryaq.Domain.csproj" />
+    <Project Path="src/Teryaq.Application/Teryaq.Application.csproj" />
+    <Project Path="src/Teryaq.Infrastructure/Teryaq.Infrastructure.csproj" />
+    <Project Path="src/Teryaq.API/Teryaq.API.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Teryaq.UnitTests/Teryaq.UnitTests.csproj" />
+    <Project Path="tests/Teryaq.IntegrationTests/Teryaq.IntegrationTests.csproj" />
+  </Folder>
+</Solution>
