@@ -1,4 +1,4 @@
-﻿namespace Teryaq.IntegrationTests;
+namespace Teryaq.IntegrationTests;
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Teryaq.Application.Common.Tenancy;
 using Teryaq.Infrastructure.Persistence;
+using Teryaq.Infrastructure.Persistence.Interceptors;
 
 /// <summary>Bootstraps the full application with an in-memory SQLite database for integration testing.</summary>
 /// <remarks>
@@ -18,6 +20,9 @@ using Teryaq.Infrastructure.Persistence;
 /// </remarks>
 public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    /// <summary>Fixed tenant identifier used across all integration test requests.</summary>
+    public static readonly Guid TestTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
     /// <inheritdoc/>
@@ -43,20 +48,21 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Remove all existing DbContext-related registrations. We must also remove
-            // IDbContextOptionsConfiguration<AppDbContext> because it holds the SQL Server
-            // provider configuration — leaving it causes a "two providers registered" error
-            // when the new SQLite registration is added on top.
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
+
+            // Override ICurrentTenant with a fixed test tenant so query filters resolve correctly.
+            services.RemoveAll<ICurrentTenant>();
+            services.AddScoped<ICurrentTenant>(_ => new TestCurrentTenant(TestTenantId));
 
             services.AddDbContext<AppDbContext>((sp, options) =>
             {
                 options.UseSqlite(_connection);
                 options.AddInterceptors(
-                    sp.GetRequiredService<Teryaq.Infrastructure.Persistence.Interceptors.AuditInterceptor>(),
-                    sp.GetRequiredService<Teryaq.Infrastructure.Persistence.Interceptors.SoftDeleteInterceptor>());
+                    sp.GetRequiredService<AuditInterceptor>(),
+                    sp.GetRequiredService<SoftDeleteInterceptor>(),
+                    sp.GetRequiredService<TenantInterceptor>());
             });
         });
     }
@@ -65,10 +71,22 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         if (disposing)
-        {
             _connection.Dispose();
-        }
 
         base.Dispose(disposing);
+    }
+
+    /// <summary>In-memory <see cref="ICurrentTenant"/> implementation for integration tests.</summary>
+    private sealed class TestCurrentTenant : ICurrentTenant
+    {
+        private readonly Guid _tenantId;
+
+        internal TestCurrentTenant(Guid tenantId) => _tenantId = tenantId;
+
+        /// <inheritdoc/>
+        public Guid TenantId => _tenantId;
+
+        /// <inheritdoc/>
+        public Guid? BranchId => null;
     }
 }

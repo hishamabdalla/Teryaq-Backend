@@ -99,7 +99,13 @@ public static class DependencyInjection
                 };
             });
 
-        services.AddAuthorization();
+        services.AddHttpContextAccessor();
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("OwnerOnly", policy => policy.RequireRole("Owner"));
+            options.AddPolicy("PharmacyStaff", policy => policy.RequireRole("Owner", "Pharmacist"));
+        });
 
         services.AddOptions<CorsOptions>()
             .BindConfiguration("Cors")

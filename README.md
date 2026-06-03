@@ -1,113 +1,158 @@
-﻿# Teryaq
+# Teryaq — ترياق
 
-A production-ready **.NET 10 Web API** template built with **Clean Architecture** and a plain service layer pattern. No MediatR, no CQRS, no Minimal APIs. Clone, rename, and ship.
+**Cloud pharmacy management SaaS for Egypt and the Gulf.**
+
+> *ترياق* — Arabic for *antidote / theriac*. The classic word for a universal remedy.
 
 ---
 
-## Tech Stack
+## The Problem
 
-| Concern | Library |
-|---|---|
-| Framework | ASP.NET Core 10 |
-| ORM | Entity Framework Core 10 (SQL Server) |
-| Mapping | AutoMapper 16 |
+Egypt has **60,000+ pharmacies**. More than 90% run on Excel or decade-old desktop software. The real cost is visible every month:
+
+- Expired drugs thrown away ($200–500/month per pharmacy on average)
+- Stockouts on high-demand items
+- Manual supplier ordering with no audit trail
+- Zero patient dispensing history
+- Incoming Ministry of Health compliance requirements for digital dispensing records
+
+Existing desktop software (Dawaa and similar) is not cloud-based, has no mobile access, no automatic expiry alerts, and no supplier API integration. Generic inventory SaaS does not understand drug-specific needs: batch/expiry tracking, controlled substance logs, drug interaction checks, or FEFO dispensing.
+
+---
+
+## What Teryaq Does
+
+Teryaq is a cloud, multi-tenant, bilingual (Arabic / English, RTL) SaaS that replaces Excel and legacy desktop software with a system purpose-built for pharmacies.
+
+### Core value proposition
+> "It pays for itself from the drugs you stop throwing away."
+
+### Phase 1 features (MVP)
+| Feature | What it solves |
+|---------|---------------|
+| **Drug Catalog** | Shared, curated database of all registered drugs — the moat. Pharmacies search and stock against it rather than typing from scratch. |
+| **Batch & expiry inventory** | Track every stock batch with its expiry date. FEFO (first-expired-first-out) dispensing enforced automatically. |
+| **Near-expiry & low-stock alerts** | Daily scan flags batches expiring within a configurable window and items below reorder level. |
+| **POS dispensing** | Fast keyboard-first dispensing screen. Each sale decrements the correct batch and writes a full audit trail. |
+| **Dashboard** | Today's sales, open alert count, near-expiry value at risk, low-stock items. |
+| **Multi-branch** | Owner account spans the whole business; each branch has its own inventory. |
+
+### Phase 2+ roadmap
+- Supplier order management (POs, receiving against POs)
+- Daily / monthly P&L reports
+- Ministry of Health compliance reports (controlled substances, dispensing records)
+- Patient history
+- AI reorder prediction, drug interaction checks at dispensing, shrinkage detection
+- Offline-first POS, mobile app, Gulf market expansion (KSA, KW, UAE)
+
+---
+
+## Market
+
+| Market | Pharmacies | Price point |
+|--------|-----------|-------------|
+| Egypt | 60,000 | $50–200/month |
+| Saudi Arabia | 15,000 | $150–600/month |
+| Kuwait / UAE | ~5,000 | Premium |
+
+**Realistic TAM:** $150M+/year regional.
+
+**Monetization:**
+- Solo pharmacy — $50/month
+- 2 branches — $100/month
+- Chain (up to 10 branches) — $200+/month
+- Onboarding fee — $200–500 (drug database setup + white-glove onboarding)
+- Annual plans (discounted)
+- Long-term: transaction fees on digital supplier orders
+
+---
+
+## Technical Stack
+
+### Backend (this repo)
+| Concern | Choice |
+|---------|--------|
+| Runtime | .NET 10 |
+| Architecture | Clean Architecture — Domain / Application / Infrastructure / API |
+| Pattern | Service layer, `Result<T>` railway error handling, no MediatR |
+| ORM | EF Core 10 (SQL Server in prod, SQLite for tests) |
+| Identity | ASP.NET Core Identity (`ApplicationUser : IdentityUser<Guid>`) |
+| Auth | JWT Bearer + refresh tokens |
 | Validation | FluentValidation 12 |
+| Mapping | AutoMapper 16 |
 | DI scanning | Scrutor 5 |
-| Authentication | JWT Bearer |
-| API versioning | Asp.Versioning 8 |
-| API docs | Swashbuckle 7 (Swagger UI) + Scalar 2 |
-| Logging | Serilog (console + file) |
-| Unit tests | xUnit + NSubstitute + Shouldly |
-| Integration tests | `WebApplicationFactory` + SQLite in-memory |
+| API docs | Swagger / Scalar |
+| Logging | Serilog |
+| Background jobs | Hangfire (Phase 1 alerts) |
+| Tests | xUnit + NSubstitute + Shouldly |
+
+### Frontend (separate repo — `Teryaq.Web`)
+Angular 21, standalone components, Angular Signals, Angular Material (RTL theme), `@ngx-translate` for AR/EN.
+
+### Database
+SQL Server (LocalDB for local dev). Shared database per-tenant via `TenantId` column + global EF query filter. The global `Drug` catalog is **not** tenant-scoped — it is shared across all pharmacies and is Teryaq's data moat.
 
 ---
 
-## Architecture
+## Project Structure
 
 ```
-API → Application → Domain
-Infrastructure → Application → Domain
-Domain → (nothing)
+Teryaq/
+├── src/
+│   ├── Teryaq.Domain/          # Entities, interfaces, exceptions, enums — zero deps
+│   ├── Teryaq.Application/     # Service interfaces, DTOs, validators, AutoMapper profiles
+│   ├── Teryaq.Infrastructure/  # EF Core, Identity, repositories, interceptors, AuthService
+│   └── Teryaq.API/             # Controllers, Program.cs, appsettings.json
+├── tests/
+│   ├── Teryaq.UnitTests/       # xUnit + NSubstitute + Shouldly
+│   └── Teryaq.IntegrationTests/# WebApplicationFactory over SQLite in-memory
+├── docs/
+│   └── superpowers/specs/      # Design documents
+├── Directory.Packages.props    # Central NuGet version management
+├── Directory.Build.props       # Shared build settings (TreatWarningsAsErrors, etc.)
+└── Teryaq.slnx                 # Solution file
 ```
-
-| Layer | Responsibility |
-|---|---|
-| **Domain** | Entities, domain events, repository interfaces, domain exceptions. Zero external dependencies. |
-| **Application** | Service interfaces + implementations, DTOs, FluentValidation validators, AutoMapper profiles, `Result<T>`, pagination, `IValidationService`. |
-| **Infrastructure** | `AppDbContext`, EF Core Fluent API configurations, repository implementations, `UnitOfWork`, soft-delete & audit interceptors, `TimeProvider` abstraction. |
-| **API** | Controllers, `IExceptionHandler`, `Program.cs`, DI wiring. Controllers are dumb — one service call, one result, return. |
-
-### Project Structure
-
-```
-src/
-├── Teryaq.Domain/          # Zero-dependency enterprise rules
-├── Teryaq.Application/     # Use cases, services, DTOs, validators
-├── Teryaq.Infrastructure/  # EF Core, repositories, interceptors
-└── Teryaq.API/             # Controllers, Program.cs, appsettings
-
-tests/
-├── Teryaq.UnitTests/       # Service tests with NSubstitute mocks
-└── Teryaq.IntegrationTests/# Full HTTP tests against SQLite in-memory
-```
-
----
-
-## Prerequisites
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- SQL Server, SQL Server LocalDB, or Docker
 
 ---
 
 ## Getting Started
 
-### 1. Clone and rename
+### Prerequisites
+- .NET 10 SDK
+- SQL Server LocalDB (ships with Visual Studio) or any SQL Server instance
+
+### 1. Clone and configure secrets
 
 ```bash
-git clone <repo-url> MyProject
-cd MyProject
+cd src/Teryaq.API
+dotnet user-secrets set "Jwt:Secret" "your-secret-key-minimum-32-characters-long"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=(localdb)\\MSSQLLocalDB;Database=TeryaqDb;Trusted_Connection=True;"
 ```
-
-Replace all occurrences of `Teryaq` with your project name in solution files, namespaces, and `appsettings.json`.
 
 ### 2. Restore tools and packages
 
 ```bash
-dotnet tool restore   # installs dotnet-ef from .config/dotnet-tools.json
+dotnet tool restore   # installs dotnet-ef
 dotnet restore
 ```
 
-### 3. Configure secrets
-
-The JWT secret must be supplied outside of committed files. Use user secrets for local dev:
+### 3. Apply the database migration
 
 ```bash
-cd src/Teryaq.API
-dotnet user-secrets set "Jwt:Secret" "your-super-secret-key-at-least-32-chars"
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=(localdb)\\MSSQLLocalDB;Database=MyProjectDb;Trusted_Connection=True;"
+dotnet ef database update \
+  --project src/Teryaq.Infrastructure \
+  --startup-project src/Teryaq.API
 ```
 
-Or override via environment variables in CI/CD and production.
-
-### 4. Apply EF Core migrations
-
-```bash
-dotnet ef database update --project src/Teryaq.Infrastructure --startup-project src/Teryaq.API
-```
-
-> An `InitialCreate` migration is included. Rename the project first, then add a new migration if you have made schema changes:
-> `dotnet ef migrations add YourMigrationName --project src/Teryaq.Infrastructure --startup-project src/Teryaq.API`
-
-### 5. Run
+### 4. Run
 
 ```bash
 dotnet run --project src/Teryaq.API
 ```
 
-Open **Swagger UI** at `https://localhost:{port}/swagger` or **Scalar** at `https://localhost:{port}/scalar/v1`.
+API docs available at: `https://localhost:{port}/scalar/v1`
 
-### 6. Run tests
+### 5. Run tests
 
 ```bash
 dotnet test
@@ -115,245 +160,44 @@ dotnet test
 
 ---
 
-## Key Patterns
+## API Overview
 
-### Result pattern
+All endpoints are versioned under `/api/v1/`.
 
-Services never throw. Every method returns `Result<T>` or `Result`:
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/v1/auth/register` | POST | Public | Register a new pharmacy (tenant + owner + branch) |
+| `/api/v1/auth/login` | POST | Public | Authenticate — returns JWT + refresh token |
+| `/api/v1/auth/refresh` | POST | Public | Exchange refresh token for a new access token |
+| `/api/v1/drugs` | GET | Staff | Search the shared drug catalog |
+| `/api/v1/drugs` | POST | Owner | Add a manual drug entry to the catalog |
+| `/api/v1/inventory` | GET / POST | Staff | Per-branch inventory list / receive new stock batch |
+| `/api/v1/alerts` | GET | Staff | Open near-expiry and low-stock alerts |
+| `/api/v1/sales` | GET / POST | Staff | Sales history / create a POS sale |
+| `/api/v1/dashboard` | GET | Staff | Today's summary (sales, alerts, at-risk value) |
 
-```csharp
-public async Task<Result<ProductDto>> GetByIdAsync(Guid id, CancellationToken ct)
-{
-    var product = await _productRepository.GetByIdAsync(id, ct);
-    if (product is null)
-        return ResultError.NotFound<Product>(id);
-
-    return _mapper.Map<ProductDto>(product);
-}
-```
-
-`ApiControllerBase` maps error codes to HTTP status codes automatically:
-
-| `ResultError` | HTTP |
-|---|---|
-| `NotFound` | 404 |
-| `Conflict` | 409 |
-| `Forbidden` | 403 |
-| `Validation` | 422 |
-| `Failure` | 400 |
-
-### Controller rule
-
-A controller method does exactly three things — call a service, pass the result to a handler, return:
-
-```csharp
-[HttpGet("{id:guid}")]
-[ProducesResponseType<ProductDto>(StatusCodes.Status200OK)]
-[ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken ct) =>
-    HandleResult(await _productService.GetByIdAsync(id, ct));
-```
-
-### Soft delete & audit
-
-All entities inherit `BaseEntity`. EF Core interceptors set `CreatedAt`, `UpdatedAt`, and `IsDeleted` automatically — no manual assignment needed.
-
-`HasQueryFilter(e => !e.IsDeleted)` in every entity configuration excludes soft-deleted rows from all queries automatically.
-
-### Domain events
-
-Entities raise domain events via `AddDomainEvent(new MyEvent(...))`. Events are collected on `BaseEntity.DomainEvents`, dispatched after `SaveChanges`, and cleared by the infrastructure layer. Listeners must be **idempotent** — dispatch happens post-commit with no outer transaction guarantee.
+**Auth policies:**
+- `OwnerOnly` — Owner role required
+- `PharmacyStaff` — Owner or Pharmacist
 
 ---
 
-## Configuration Reference
+## Architecture Decisions
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": ""
-  },
-  "Database": {
-    "Provider": "SqlServer"
-  },
-  "Jwt": {
-    "Issuer": "Teryaq",
-    "Audience": "Teryaq",
-    "Secret": ""
-  },
-  "Cors": {
-    "AllowedOrigins": ["http://localhost:3000", "http://localhost:4200"]
-  },
-  "RateLimit": {
-    "WindowSeconds": 60,
-    "PermitLimit": 100
-  }
-}
-```
+**Shared database, per-tenant row filtering** — One SQL Server database. Every tenant-scoped entity carries a `TenantId` column. EF Core global query filters ensure tenants can never read each other's data. Chosen for simplicity and cost-effectiveness at 60k-tenant scale.
 
-All sensitive values (`Jwt:Secret`, `ConnectionStrings:DefaultConnection`) must be supplied via user secrets, environment variables, or a secrets manager. The app will **fail to start** if `Jwt:Secret` is missing or shorter than 32 characters.
+**Shared Drug catalog** — The `Drug` table is not tenant-scoped. All 60,000 pharmacies read from the same curated catalog. This is the product's data moat: a pharmacy signs up and immediately searches 20,000+ drugs by name, barcode, or ingredient — no manual entry needed. Teryaq curates once; all tenants benefit.
+
+**Service layer, no CQRS** — Deliberately kept simple. MediatR adds indirection without benefit at this scale. Services return `Result<T>`; controllers delegate and return.
+
+**No offline POS in Phase 1** — Cloud-only ships in 12–16 weeks. Offline sync (local store + conflict resolution) is a major engineering undertaking and is deferred to Phase 5.
 
 ---
 
-## Adding a New Feature
+## Go-to-Market
 
-Use **Order** as a walkthrough example.
-
-### 1. Domain entity
-
-`src/Teryaq.Domain/Features/Orders/Order.cs`
-
-```csharp
-/// <summary>Represents a customer order.</summary>
-public sealed class Order : BaseEntity
-{
-    private Order() { }
-
-    /// <summary>Gets the name of the customer who placed the order.</summary>
-    public string CustomerName { get; private set; } = string.Empty;
-
-    /// <summary>Gets the total monetary amount of the order.</summary>
-    public decimal TotalAmount { get; private set; }
-
-    /// <summary>Creates a new order and raises <see cref="OrderCreatedEvent"/>.</summary>
-    public static Order Create(string customerName, decimal totalAmount)
-    {
-        var order = new Order { CustomerName = customerName, TotalAmount = totalAmount };
-        order.AddDomainEvent(new OrderCreatedEvent(order.Id));
-        return order;
-    }
-
-    /// <summary>Replaces all mutable fields with new values.</summary>
-    public void Update(string customerName, decimal totalAmount)
-    {
-        CustomerName = customerName;
-        TotalAmount = totalAmount;
-    }
-}
-```
-
-### 2. Domain event (optional)
-
-```csharp
-/// <summary>Raised when a new order is created.</summary>
-/// <param name="OrderId">Identifier of the newly created order.</param>
-public sealed record OrderCreatedEvent(Guid OrderId) : DomainEvent;
-```
-
-### 3. Repository interface
-
-```csharp
-/// <summary>Data access contract for <see cref="Order"/> entities.</summary>
-public interface IOrderRepository : IRepository<Order> { }
-```
-
-### 4–5. Application layer (DTOs, validators, profile, service)
-
-Create `Application/Features/Orders/` with:
-- `Dtos/OrderDto.cs`, `CreateOrderRequest.cs`, `UpdateOrderRequest.cs`
-- `Profiles/OrderProfile.cs` — `CreateMap<Order, OrderDto>()`
-- `Validators/CreateOrderRequestValidator.cs`, `UpdateOrderRequestValidator.cs`
-- `IOrderService.cs` + `OrderService.cs` returning `Result<T>`
-
-### 6. EF Core configuration
-
-```csharp
-/// <summary>Configures the <see cref="Order"/> entity.</summary>
-public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
-{
-    /// <inheritdoc/>
-    public void Configure(EntityTypeBuilder<Order> builder)
-    {
-        builder.HasKey(o => o.Id);
-        builder.Property(o => o.CustomerName).IsRequired().HasMaxLength(200);
-        builder.Property(o => o.TotalAmount).HasColumnType("decimal(18,2)").IsRequired();
-        builder.Property(o => o.IsDeleted).IsRequired().HasDefaultValue(false);
-        builder.HasQueryFilter(o => !o.IsDeleted);
-        builder.Ignore(o => o.DomainEvents);
-    }
-}
-```
-
-### 7. Repository + DbSet
-
-```csharp
-/// <inheritdoc cref="IOrderRepository"/>
-public sealed class OrderRepository(AppDbContext context)
-    : GenericRepository<Order>(context), IOrderRepository { }
-```
-
-Add to `AppDbContext`: `public DbSet<Order> Orders => Set<Order>();`
-
-### 8. Migration
-
-```bash
-dotnet ef migrations add AddOrders --project src/Teryaq.Infrastructure --startup-project src/Teryaq.API
-dotnet ef database update --project src/Teryaq.Infrastructure --startup-project src/Teryaq.API
-```
-
-### 9. Controller
-
-```csharp
-/// <summary>Manages order resources.</summary>
-public sealed class OrdersController(IOrderService orderService) : ApiControllerBase
-{
-    [HttpGet("{id:guid}")]
-    [ProducesResponseType<OrderDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken ct) =>
-        HandleResult(await orderService.GetByIdAsync(id, ct));
-}
-```
-
-> **No manual DI registration needed.** Scrutor auto-discovers `OrderService` (ends with `Service`) and `OrderRepository` (ends with `Repository`).
-
----
-
-## API Versioning
-
-All endpoints use URL-segment versioning: `/api/v{version}/...`. Current version: **v1**.
-
-## Authentication
-
-JWT Bearer is pre-wired. Add `[Authorize]` to controllers or actions as needed. No login endpoint is included — add an `AuthController` that issues tokens from your user store.
-
-## Naming Conventions
-
-| Artifact | Pattern |
-|---|---|
-| Service interface / impl | `IProductService` / `ProductService` |
-| Repository interface / impl | `IProductRepository` / `ProductRepository` |
-| Read DTO | `ProductDto` |
-| Create / update requests | `CreateProductRequest` / `UpdateProductRequest` |
-| Validators | `CreateProductRequestValidator` / `UpdateProductRequestValidator` |
-| AutoMapper profile | `ProductProfile` |
-| Controller | `ProductsController` (plural) |
-| Domain event | `ProductCreatedEvent` |
-| EF configuration | `ProductConfiguration` |
-
-## Rules
-
-**Do:**
-- Return `Result<T>` from every service method.
-- Validate via `IValidationService` before any business logic.
-- Call `_unitOfWork.SaveChangesAsync(ct)` at the end of every write.
-- Use `<inheritdoc/>` on every concrete implementation's methods.
-- Use `[ProducesResponseType<T>(statusCode)]` on every controller action.
-- Put `CancellationToken` in every `async` signature.
-- Put `HasQueryFilter(e => !e.IsDeleted)` in every entity's EF configuration.
-
-**Don't:**
-- Don't throw from services — return `Result.Fail(...)`.
-- Don't call `_mapper.Map<>` in a controller.
-- Don't call repositories from controllers.
-- Don't put EF Core or AutoMapper in Domain or Application.
-- Don't reference Infrastructure from Application or Domain.
-- Don't add MediatR or any CQRS library.
-- Don't register services or repositories manually — Scrutor handles it.
-- Don't use `Forbid()` for 403 — use `HandleResult` with `ResultError.Forbidden`.
-
----
-
-## License
-
-MIT
+- Partner with pharmaceutical distributors (EgyDrug, Amin, others) — they visit every pharmacy weekly and can demo the product.
+- Target pharmacy Facebook groups and WhatsApp networks.
+- Free 90-day trial with white-glove onboarding.
+- One reference pharmacy per district = social proof.
+- Long-term: transaction fees on digital supplier orders create a revenue layer beyond subscriptions.

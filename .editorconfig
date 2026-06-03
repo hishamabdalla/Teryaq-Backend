@@ -101,6 +101,12 @@ dotnet_diagnostic.CA1822.severity = warning
 dotnet_diagnostic.CA2007.severity = warning
 
 ###############################
+# EF Core generated migrations — skip all style/analyzer rules
+###############################
+[**/Migrations/**.cs]
+generated_code = true
+
+###############################
 # JSON / XML / YAML / CSPROJ
 ###############################
 [*.{json,xml,yml,yaml,csproj,props,targets,slnx}]

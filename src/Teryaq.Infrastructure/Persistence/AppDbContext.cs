@@ -1,26 +1,72 @@
-﻿namespace Teryaq.Infrastructure.Persistence;
+namespace Teryaq.Infrastructure.Persistence;
 
 using System.Reflection;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Teryaq.Domain.Features.Products;
+using Teryaq.Application.Common.Tenancy;
+using Teryaq.Domain.Common;
+using Teryaq.Domain.Features.Branches;
+using Teryaq.Domain.Features.Tenants;
+using Teryaq.Infrastructure.Identity;
 
-/// <summary>The application's primary EF Core database context. Entity configurations are applied from the current assembly.</summary>
-public sealed class AppDbContext : DbContext
+/// <summary>The application's primary EF Core database context. Extends Identity and applies tenant + soft-delete global filters.</summary>
+public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
+    private readonly ICurrentTenant _currentTenant;
+
     /// <summary>Initialises a new instance of <see cref="AppDbContext"/>.</summary>
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentTenant currentTenant) : base(options)
     {
+        _currentTenant = currentTenant;
         ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTrackingWithIdentityResolution;
     }
 
-    /// <summary>Gets the products table.</summary>
-    public DbSet<Product> Products => Set<Product>();
+    /// <summary>Gets the tenants table.</summary>
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+
+    /// <summary>Gets the branches table.</summary>
+    public DbSet<Branch> Branches => Set<Branch>();
 
     /// <inheritdoc/>
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        ArgumentNullException.ThrowIfNull(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-        base.OnModelCreating(modelBuilder);
+        ArgumentNullException.ThrowIfNull(builder);
+        base.OnModelCreating(builder);
+        RenameIdentityTables(builder);
+        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        ApplyTenantFilters(builder);
+    }
+
+    private static void RenameIdentityTables(ModelBuilder builder)
+    {
+        builder.Entity<ApplicationUser>().ToTable("Users");
+        builder.Entity<IdentityRole<Guid>>().ToTable("Roles");
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+    }
+
+    private void ApplyTenantFilters(ModelBuilder builder)
+    {
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            var clrType = entityType.ClrType;
+            if (typeof(ITenantEntity).IsAssignableFrom(clrType) && typeof(BaseEntity).IsAssignableFrom(clrType))
+            {
+                typeof(AppDbContext)
+                    .GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(this, [builder]);
+            }
+        }
+    }
+
+    private void SetTenantFilter<TEntity>(ModelBuilder builder)
+        where TEntity : BaseEntity, ITenantEntity
+    {
+        builder.Entity<TEntity>().HasQueryFilter(e => !e.IsDeleted && e.TenantId == _currentTenant.TenantId);
     }
 }

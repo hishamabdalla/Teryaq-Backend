@@ -49,6 +49,9 @@ logs/
 ## EF Core
 # (Migrations are committed; runtime artefacts are not)
 
+## Claude Code instructions (local dev context, not for source control)
+CLAUDE.md
+
 ## App secrets
 appsettings.*.Local.json
 secrets.json
@@ -59,3 +62,4 @@ secrets.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+/CLAUDE.md
