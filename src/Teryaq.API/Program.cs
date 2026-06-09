@@ -1,6 +1,9 @@
-﻿using Teryaq.API.Extensions;
+﻿using Microsoft.EntityFrameworkCore;
+using Teryaq.API.Extensions;
 using Teryaq.Application;
 using Teryaq.Infrastructure;
+using Teryaq.Infrastructure.Persistence;
+using Teryaq.Infrastructure.Persistence.Seed;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -23,6 +26,15 @@ try
         .AddAPI(builder.Configuration);
 
     var app = builder.Build();
+
+    if (app.Environment.IsDevelopment())
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var seederLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        await db.Database.MigrateAsync();
+        await DrugSeeder.SeedAsync(db, seederLogger);
+    }
 
     app.UseExceptionHandler();
 

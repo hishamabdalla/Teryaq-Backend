@@ -52,6 +52,9 @@ logs/
 ## Claude Code instructions (local dev context, not for source control)
 CLAUDE.md
 
+## Local documentation (not for source control)
+Docs/
+
 ## App secrets
 appsettings.*.Local.json
 secrets.json
