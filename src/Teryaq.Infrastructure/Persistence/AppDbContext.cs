@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Teryaq.Application.Common.Tenancy;
 using Teryaq.Domain.Common;
 using Teryaq.Domain.Features.Branches;
+using Teryaq.Domain.Features.Drugs;
 using Teryaq.Domain.Features.Tenants;
 using Teryaq.Infrastructure.Identity;
 
@@ -27,6 +28,9 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRo
 
     /// <summary>Gets the branches table.</summary>
     public DbSet<Branch> Branches => Set<Branch>();
+
+    /// <summary>Gets the drugs table.</summary>
+    public DbSet<Drug> Drugs => Set<Drug>();
 
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder builder)
