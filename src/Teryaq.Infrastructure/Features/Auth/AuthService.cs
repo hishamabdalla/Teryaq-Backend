@@ -81,8 +81,8 @@ public sealed class AuthService : IAuthService
         if (!createResult.Succeeded)
         {
             await transaction.RollbackAsync(ct);
-            string errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
-            return Result.Fail<AuthResponse>(ResultError.Validation(errors));
+            string[] errors = createResult.Errors.Select(e => e.Description).ToArray();
+            return Result.Fail<AuthResponse>(ResultError.Validation(new Dictionary<string, string[]> { ["OwnerPassword"] = errors }));
         }
 
         await _userManager.AddToRoleAsync(user, ownerRole);

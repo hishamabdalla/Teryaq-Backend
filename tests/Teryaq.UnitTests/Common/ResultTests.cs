@@ -77,12 +77,12 @@ public sealed class ResultTests
     [Fact]
     public void Match_CallsOnFailure_WhenFailed()
     {
-        Result<string> result = ResultError.Validation("bad input");
+        Result<string> result = ResultError.Validation(new Dictionary<string, string[]> { ["input"] = ["bad input"] });
 
         string projected = result.Match(
             onSuccess: _ => "ok",
             onFailure: e => e.Message);
 
-        projected.ShouldBe("bad input");
+        projected.ShouldBe("One or more validation errors occurred.");
     }
 }

@@ -34,9 +34,21 @@ public abstract class ApiControllerBase : ControllerBase
         ResultErrorCodes.NotFound => NotFound(CreateProblem(404, error.Title, error.Message)),
         ResultErrorCodes.Conflict => Conflict(CreateProblem(409, error.Title, error.Message)),
         ResultErrorCodes.Forbidden => StatusCode(StatusCodes.Status403Forbidden, CreateProblem(403, error.Title, error.Message)),
-        ResultErrorCodes.Validation => UnprocessableEntity(CreateProblem(422, error.Title, error.Message)),
+        ResultErrorCodes.Validation => UnprocessableEntity(CreateValidationProblem(error)),
         _ => BadRequest(CreateProblem(400, error.Title, error.Message)),
     };
+
+    private static ValidationProblemDetails CreateValidationProblem(ResultError error)
+    {
+        var details = new ValidationProblemDetails(
+            error.ValidationErrors?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            ?? new Dictionary<string, string[]>())
+        {
+            Status = 422,
+            Detail = error.Message,
+        };
+        return details;
+    }
 
     private static ProblemDetails CreateProblem(int status, string title, string detail) => new()
     {

@@ -36,10 +36,14 @@ public sealed record ResultError(string Code, string Title, string Message)
     public static ResultError Forbidden(string entity, string message) =>
         new(ResultErrorCodes.Forbidden, $"{entity}.{ResultErrorCodes.Forbidden}", message);
 
-    /// <summary>Creates a 422-mapped error for FluentValidation failures. No entity qualifier — validation errors are framework-aggregated.</summary>
-    /// <param name="message">Human-readable description of the validation failure.</param>
-    public static ResultError Validation(string message) =>
-        new(ResultErrorCodes.Validation, ResultErrorCodes.Validation, message);
+    /// <summary>Gets the per-field validation errors when this is a structured validation failure; <see langword="null"/> otherwise.</summary>
+    public IReadOnlyDictionary<string, string[]>? ValidationErrors { get; init; }
+
+    /// <summary>Creates a 422-mapped error carrying a structured per-field error dictionary.</summary>
+    /// <param name="errors">Field-keyed validation messages produced by FluentValidation.</param>
+    public static ResultError Validation(Dictionary<string, string[]> errors) =>
+        new(ResultErrorCodes.Validation, ResultErrorCodes.Validation, "One or more validation errors occurred.")
+        { ValidationErrors = errors };
 
     /// <summary>Creates a generic 400-mapped error.</summary>
     /// <param name="entity">Entity or resource name used to qualify the title.</param>

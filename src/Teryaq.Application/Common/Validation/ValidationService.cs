@@ -35,8 +35,10 @@ public sealed partial class ValidationService : IValidationService
             return Result.Ok();
         }
 
-        string message = string.Join("; ", validationResult.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}"));
-        return Result.Fail(ResultError.Validation(message));
+        var errors = validationResult.Errors
+            .GroupBy(e => e.PropertyName)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+        return Result.Fail(ResultError.Validation(errors));
     }
 
     private static partial class Log
