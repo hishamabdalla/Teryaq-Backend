@@ -42,7 +42,6 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 ["Jwt:Secret"] = "test-only-secret-at-least-32-characters!",
                 ["Jwt:Issuer"] = "TestIssuer",
                 ["Jwt:Audience"] = "TestAudience",
-                ["Cors:AllowedOrigins:0"] = "http://localhost:3000",
             });
         });
 

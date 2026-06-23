@@ -2,6 +2,7 @@
 
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(configuration);
 
         services.AddControllers(options => options.SuppressAsyncSuffixInActionNames = false)
+            .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
             .ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -107,17 +109,11 @@ public static class DependencyInjection
             options.AddPolicy("PharmacyStaff", policy => policy.RequireRole("Owner", "Pharmacist"));
         });
 
-        services.AddOptions<CorsOptions>()
-            .BindConfiguration("Cors")
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
             {
-                string[] origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-                policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+                policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
             });
         });
 

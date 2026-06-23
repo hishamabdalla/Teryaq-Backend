@@ -1,11 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Serilog;
 using Teryaq.API.Extensions;
 using Teryaq.Application;
 using Teryaq.Infrastructure;
-using Teryaq.Infrastructure.Persistence;
-using Teryaq.Infrastructure.Persistence.Seed;
-using Scalar.AspNetCore;
-using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -27,55 +23,9 @@ try
 
     var app = builder.Build();
 
-    if (app.Environment.IsDevelopment())
-    {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var seederLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        await db.Database.MigrateAsync();
-        await DrugSeeder.SeedAsync(db, seederLogger);
-    }
+    await app.InitialiseDatabaseAsync();
 
-    app.UseExceptionHandler();
-
-    if (!app.Environment.IsDevelopment())
-    {
-        app.UseHsts();
-    }
-
-    app.UseHttpsRedirection();
-    app.UseSerilogRequestLogging();
-
-    app.UseCors();
-
-    app.UseRateLimiter();
-
-    app.UseResponseCompression();
-
-    app.UseAuthentication();
-    app.UseAuthorization();
-
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Teryaq API v1");
-            options.RoutePrefix = "swagger";
-        });
-    }
-
-    app.MapScalarApiReference(options =>
-    {
-        options.WithTitle("Teryaq API")
-               .WithTheme(ScalarTheme.DeepSpace)
-               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-               .WithOpenApiRoutePattern("/swagger/{documentName}/swagger.json");
-    });
-
-    app.MapControllers();
-
-    app.MapHealthChecks("/health");
+    app.UseAPI();
 
     await app.RunAsync();
 }
