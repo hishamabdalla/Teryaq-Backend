@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Identity;
 /// <summary>Application user extending ASP.NET Core Identity with tenant and branch membership.</summary>
 public sealed class ApplicationUser : IdentityUser<Guid>
 {
+    /// <summary>Gets or sets the display name for this user.</summary>
+    public string FullName { get; set; } = string.Empty;
+
     /// <summary>Gets or sets the tenant this user belongs to.</summary>
     public Guid TenantId { get; set; }
 

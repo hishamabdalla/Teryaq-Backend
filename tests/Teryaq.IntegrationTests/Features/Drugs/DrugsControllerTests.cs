@@ -12,7 +12,8 @@ using Teryaq.Infrastructure.Persistence;
 using Xunit;
 
 /// <summary>Integration tests for the <c>/api/v1/drugs</c> endpoint covering all CRUD operations and auth enforcement.</summary>
-public sealed class DrugsControllerTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifetime
+[Collection(IntegrationTestSuite.Name)]
+public sealed class DrugsControllerTests : IAsyncLifetime
 {
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;

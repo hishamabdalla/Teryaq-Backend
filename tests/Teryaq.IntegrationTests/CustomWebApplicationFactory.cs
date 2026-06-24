@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Teryaq.Application.Common.Tenancy;
 using Teryaq.Infrastructure.Persistence;
 using Teryaq.Infrastructure.Persistence.Interceptors;
 
@@ -17,10 +16,12 @@ using Teryaq.Infrastructure.Persistence.Interceptors;
 /// Keeps one <see cref="SqliteConnection"/> open for the lifetime of the factory so that the
 /// in-memory database is not destroyed between requests. Each test resets the schema via
 /// <c>EnsureDeleted</c> + <c>EnsureCreated</c> in its <c>InitializeAsync</c>.
+/// The real <see cref="Teryaq.Infrastructure.Services.CurrentTenantService"/> is used so that
+/// tenant query filters and FK constraints resolve correctly from the JWT <c>tenant_id</c> claim.
 /// </remarks>
 public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
-    /// <summary>Fixed tenant identifier used across all integration test requests.</summary>
+    /// <summary>Reference tenant identifier kept for test convenience; not injected as a fixed override.</summary>
     public static readonly Guid TestTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
@@ -51,10 +52,6 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll<AppDbContext>();
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
 
-            // Override ICurrentTenant with a fixed test tenant so query filters resolve correctly.
-            services.RemoveAll<ICurrentTenant>();
-            services.AddScoped<ICurrentTenant>(_ => new TestCurrentTenant(TestTenantId));
-
             services.AddDbContext<AppDbContext>((sp, options) =>
             {
                 options.UseSqlite(_connection);
@@ -73,19 +70,5 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             _connection.Dispose();
 
         base.Dispose(disposing);
-    }
-
-    /// <summary>In-memory <see cref="ICurrentTenant"/> implementation for integration tests.</summary>
-    private sealed class TestCurrentTenant : ICurrentTenant
-    {
-        private readonly Guid _tenantId;
-
-        internal TestCurrentTenant(Guid tenantId) => _tenantId = tenantId;
-
-        /// <inheritdoc/>
-        public Guid TenantId => _tenantId;
-
-        /// <inheritdoc/>
-        public Guid? BranchId => null;
     }
 }

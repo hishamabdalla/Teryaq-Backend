@@ -28,6 +28,15 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(t => t.OnboardingStatus)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(t => t.ContactEmail).HasMaxLength(256);
+
+        builder.Property(t => t.ContactPhone).HasMaxLength(20);
+
         builder.Property(t => t.IsDeleted)
             .IsRequired()
             .HasDefaultValue(false);

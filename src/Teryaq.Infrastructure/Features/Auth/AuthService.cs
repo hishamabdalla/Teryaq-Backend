@@ -73,6 +73,7 @@ public sealed class AuthService : IAuthService
             Id = Guid.NewGuid(),
             UserName = request.OwnerEmail,
             Email = request.OwnerEmail,
+            FullName = string.IsNullOrWhiteSpace(request.OwnerName) ? request.OwnerEmail : request.OwnerName,
             TenantId = tenant.Id,
             BranchId = null,
         };
@@ -94,7 +95,8 @@ public sealed class AuthService : IAuthService
 
         await transaction.CommitAsync(ct);
 
-        return Result.Ok(new AuthResponse(accessToken, refreshToken, expiresAt, tenant.Id, null, ownerRole));
+        var userDto = new AuthUserDto(user.Id, user.Email!, user.FullName, ownerRole, tenant.Id, null);
+        return Result.Ok(new AuthResponse(accessToken, refreshToken, expiresAt, userDto, tenant.Id, null));
     }
 
     /// <inheritdoc/>
@@ -115,7 +117,8 @@ public sealed class AuthService : IAuthService
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
         await _userManager.UpdateAsync(user);
 
-        return Result.Ok(new AuthResponse(accessToken, refreshToken, expiresAt, user.TenantId, user.BranchId, role));
+        var loginUserDto = new AuthUserDto(user.Id, user.Email!, user.FullName, role, user.TenantId, user.BranchId);
+        return Result.Ok(new AuthResponse(accessToken, refreshToken, expiresAt, loginUserDto, user.TenantId, user.BranchId));
     }
 
     /// <inheritdoc/>
@@ -135,7 +138,8 @@ public sealed class AuthService : IAuthService
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
         await _userManager.UpdateAsync(user);
 
-        return Result.Ok(new AuthResponse(accessToken, refreshToken, expiresAt, user.TenantId, user.BranchId, role));
+        var refreshUserDto = new AuthUserDto(user.Id, user.Email!, user.FullName, role, user.TenantId, user.BranchId);
+        return Result.Ok(new AuthResponse(accessToken, refreshToken, expiresAt, refreshUserDto, user.TenantId, user.BranchId));
     }
 
     private (string AccessToken, string RefreshToken, DateTime ExpiresAt) IssueTokens(ApplicationUser user, string role)

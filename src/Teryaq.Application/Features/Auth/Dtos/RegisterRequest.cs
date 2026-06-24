@@ -7,10 +7,12 @@ namespace Teryaq.Application.Features.Auth.Dtos;
 /// <param name="BranchPhone">Optional contact phone number of the main branch.</param>
 /// <param name="OwnerEmail">Email address used to log in.</param>
 /// <param name="OwnerPassword">Password for the owner account (min 8 chars).</param>
+/// <param name="OwnerName">Display name for the owner; defaults to the email address when omitted.</param>
 public sealed record RegisterRequest(
     string PharmacyName,
     string BranchName,
     string? BranchAddress,
     string? BranchPhone,
     string OwnerEmail,
-    string OwnerPassword);
+    string OwnerPassword,
+    string? OwnerName = null);

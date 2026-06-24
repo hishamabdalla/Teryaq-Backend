@@ -38,6 +38,7 @@ public static class WebApplicationExtensions
         app.UseResponseCompression();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<Teryaq.API.Middleware.PlanLimitMiddleware>();
 
         app.UseSwagger();
         app.UseSwaggerUI(options =>

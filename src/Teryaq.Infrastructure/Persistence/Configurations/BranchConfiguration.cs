@@ -26,12 +26,19 @@ public sealed class BranchConfiguration : IEntityTypeConfiguration<Branch>
 
         builder.Property(b => b.IsMain).IsRequired().HasDefaultValue(false);
 
+        builder.Property(b => b.IsActive).IsRequired().HasDefaultValue(true);
+
         builder.Property(b => b.IsDeleted).IsRequired().HasDefaultValue(false);
 
         // Tenant filter + soft-delete filter applied centrally in AppDbContext.OnModelCreating
         // for all ITenantEntity types — do NOT add HasQueryFilter here.
 
         builder.HasIndex(b => b.TenantId);
+
+        builder.HasOne<Teryaq.Domain.Features.Tenants.Tenant>()
+            .WithMany()
+            .HasForeignKey(b => b.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Ignore(b => b.DomainEvents);
     }
