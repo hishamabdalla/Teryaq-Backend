@@ -1,0 +1,89 @@
+# Manual trigger only — does not run on push or pull_request.
+# Type "deploy" in the confirm field to run build, test, migrate, and deploy to MonsterASP.
+#
+# Required GitHub secrets for deploy (Settings → Secrets and variables → Actions):
+#   WEBSITE_NAME, SERVER_COMPUTER_NAME, SERVER_USERNAME, SERVER_PASSWORD
+#   PRODUCTION_CONNECTION_STRING
+#
+# MonsterASP runtime env vars: ConnectionStrings__DefaultConnection, Jwt__Secret
+
+name: Teryaq CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm production deployment'
+        required: true
+        default: ''
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build (warnings as errors)
+        run: dotnet build --no-restore -p:TreatWarningsAsErrors=true
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  deploy:
+    needs: build-and-test
+    if: github.event.inputs.confirm == 'deploy'
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -p:TreatWarningsAsErrors=true
+
+      - name: Apply EF migrations to production
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_CONNECTION_STRING }}
+        run: dotnet ef database update --project src/Teryaq.Infrastructure --startup-project src/Teryaq.API --verbose
+
+      - name: Publish
+        shell: pwsh
+        run: dotnet publish src/Teryaq.API/Teryaq.API.csproj --configuration Release --output "$env:GITHUB_WORKSPACE/publish" --runtime win-x86 --self-contained false
+
+      - name: Verify publish output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE/publish")) {
+            throw "Publish folder not found at $env:GITHUB_WORKSPACE/publish"
+          }
+          Get-ChildItem "$env:GITHUB_WORKSPACE/publish" | Select-Object Name, Length
+
+      - name: Deploy via Web Deploy
+        uses: rasmusbuchholdt/simply-web-deploy@2.2.0
+        with:
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}
+          source-path: publish

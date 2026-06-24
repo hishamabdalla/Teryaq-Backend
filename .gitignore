@@ -57,9 +57,15 @@ Docs/
 
 ## App secrets
 appsettings.*.Local.json
+appsettings.Production.json
 secrets.json
 *.pfx
 *.key
+
+## Web Deploy publish settings (credentials belong in GitHub Secrets)
+Publish Profile/
+**/Publish Profile/
+*.publishSettings
 
 ## OS
 Thumbs.db

@@ -16,7 +16,7 @@ public sealed class DrugConfiguration : IEntityTypeConfiguration<Drug>
 
         builder.Property(d => d.TradeNameAr).IsRequired().HasMaxLength(500);
         builder.Property(d => d.TradeNameEn).IsRequired().HasMaxLength(500);
-        builder.Property(d => d.GenericName).IsRequired().HasColumnType("nvarchar(max)");
+        builder.Property(d => d.GenericName).IsRequired();
         builder.Property(d => d.DosageForm).IsRequired().HasMaxLength(100);
         builder.Property(d => d.Strength).IsRequired().HasMaxLength(100);
         builder.Property(d => d.PackSize).IsRequired();

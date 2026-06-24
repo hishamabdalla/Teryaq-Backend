@@ -12,7 +12,7 @@ public static class WebApplicationExtensions
     /// <summary>Runs EF Core migrations and seeds reference data in non-development environments.</summary>
     public static async Task InitialiseDatabaseAsync(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
             return;
 
         using var scope = app.Services.CreateScope();
