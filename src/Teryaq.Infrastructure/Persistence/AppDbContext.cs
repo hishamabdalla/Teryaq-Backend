@@ -8,6 +8,7 @@ using Teryaq.Application.Common.Tenancy;
 using Teryaq.Domain.Common;
 using Teryaq.Domain.Features.Branches;
 using Teryaq.Domain.Features.Drugs;
+using Teryaq.Domain.Features.Inventory;
 using Teryaq.Domain.Features.Tenants;
 using Teryaq.Infrastructure.Identity;
 
@@ -31,6 +32,9 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRo
 
     /// <summary>Gets the drugs table.</summary>
     public DbSet<Drug> Drugs => Set<Drug>();
+
+    /// <summary>Gets the stock batches table.</summary>
+    public DbSet<StockBatch> StockBatches => Set<StockBatch>();
 
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder builder)
