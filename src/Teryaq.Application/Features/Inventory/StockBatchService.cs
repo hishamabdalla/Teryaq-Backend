@@ -89,6 +89,7 @@ public sealed class StockBatchService : IStockBatchService
             request.BatchNumber,
             request.ExpiryDate,
             request.Quantity,
+            request.ReorderLevel,
             request.CostPrice,
             sellingPrice,
             DateTime.UtcNow);
@@ -113,7 +114,7 @@ public sealed class StockBatchService : IStockBatchService
         if (batch is null)
             return Result.Fail<StockBatchDto>(ResultError.NotFound<StockBatch>(id));
 
-        batch.Adjust(request.QuantityOnHand, request.SellingPrice, request.ExpiryDate);
+        batch.Adjust(request.QuantityOnHand, request.SellingPrice, request.ExpiryDate, request.ReorderLevel);
         await _unitOfWork.SaveChangesAsync(ct);
 
         // Reload with nav props for the response DTO.

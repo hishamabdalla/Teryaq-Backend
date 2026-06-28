@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Teryaq.API.Infrastructure;
 using Teryaq.API.Options;
+using Teryaq.Application.Common.Settings;
 
 /// <summary>Registers all API-layer services into the DI container.</summary>
 public static class DependencyInjection
@@ -81,6 +82,10 @@ public static class DependencyInjection
         services.AddOptions<JwtOptions>()
             .BindConfiguration("Jwt")
             .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<AlertSettings>()
+            .BindConfiguration("Alerts")
             .ValidateOnStart();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

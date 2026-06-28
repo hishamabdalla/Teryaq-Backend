@@ -60,4 +60,43 @@ public sealed class StockBatchRepository : GenericRepository<StockBatch>, IStock
 
         return (items, totalCount);
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<StockBatch>> GetNearExpiryAsync(
+        Guid? branchId,
+        DateOnly expiringOnOrBefore,
+        CancellationToken ct = default)
+    {
+        var query = Context.Set<StockBatch>()
+            .Include(b => b.Drug)
+            .Include(b => b.Branch)
+            .AsNoTracking()
+            .Where(b => b.ExpiryDate <= expiringOnOrBefore && b.QuantityOnHand > 0);
+
+        if (branchId.HasValue)
+            query = query.Where(b => b.BranchId == branchId.Value);
+
+        return await query
+            .OrderBy(b => b.ExpiryDate)
+            .ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<StockBatch>> GetLowStockAsync(
+        Guid? branchId,
+        CancellationToken ct = default)
+    {
+        var query = Context.Set<StockBatch>()
+            .Include(b => b.Drug)
+            .Include(b => b.Branch)
+            .AsNoTracking()
+            .Where(b => b.ReorderLevel > 0 && b.QuantityOnHand <= b.ReorderLevel);
+
+        if (branchId.HasValue)
+            query = query.Where(b => b.BranchId == branchId.Value);
+
+        return await query
+            .OrderBy(b => b.QuantityOnHand)
+            .ToListAsync(ct);
+    }
 }

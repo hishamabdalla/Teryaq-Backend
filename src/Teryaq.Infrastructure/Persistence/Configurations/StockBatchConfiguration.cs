@@ -30,6 +30,10 @@ public sealed class StockBatchConfiguration : IEntityTypeConfiguration<StockBatc
 
         builder.Property(b => b.QuantityOnHand).IsRequired();
 
+        builder.Property(b => b.ReorderLevel)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         builder.Property(b => b.CostPrice)
             .IsRequired()
             .HasPrecision(18, 4);
@@ -47,6 +51,7 @@ public sealed class StockBatchConfiguration : IEntityTypeConfiguration<StockBatc
 
         builder.HasIndex(b => b.TenantId);
         builder.HasIndex(b => new { b.BranchId, b.ExpiryDate });
+        builder.HasIndex(b => new { b.BranchId, b.QuantityOnHand });
         builder.HasIndex(b => b.DrugId);
 
         builder.HasOne(b => b.Branch)

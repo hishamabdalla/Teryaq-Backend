@@ -80,7 +80,7 @@ public sealed class StockBatchServiceTests
         var request = new ReceiveStockRequest(
             TestBranch.Id, ActiveDrug.Id, "LOT-001",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            100, 10.00m, null);
+            100, 0, 10.00m, null);
 
         var savedBatch = MakeBatch();
 
@@ -103,7 +103,7 @@ public sealed class StockBatchServiceTests
         var request = new ReceiveStockRequest(
             TestBranch.Id, ActiveDrug.Id, "LOT-002",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            50, 8.00m, null);  // SellingPrice = null
+            50, 0, 8.00m, null);  // SellingPrice = null
 
         var capturedBatch = (StockBatch?)null;
 
@@ -127,7 +127,7 @@ public sealed class StockBatchServiceTests
         var request = new ReceiveStockRequest(
             TestBranch.Id, Guid.NewGuid(), "LOT-003",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            10, 5.00m, null);
+            10, 0, 5.00m, null);
 
         _validation.ValidateAsync(request, default).Returns(Result.Ok());
         _drugRepo.GetByIdAsync(request.DrugId, default).Returns((Drug?)null);
@@ -153,7 +153,7 @@ public sealed class StockBatchServiceTests
         var request = new ReceiveStockRequest(
             TestBranch.Id, inactiveDrug.Id, "LOT-004",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            10, 5.00m, null);
+            10, 0, 5.00m, null);
 
         _validation.ValidateAsync(request, default).Returns(Result.Ok());
         _drugRepo.GetByIdAsync(inactiveDrug.Id, default).Returns(inactiveDrug);
@@ -172,7 +172,7 @@ public sealed class StockBatchServiceTests
         var request = new ReceiveStockRequest(
             Guid.NewGuid(), ActiveDrug.Id, "LOT-005",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            10, 5.00m, null);
+            10, 0, 5.00m, null);
 
         _validation.ValidateAsync(request, default).Returns(Result.Ok());
         _drugRepo.GetByIdAsync(ActiveDrug.Id, default).Returns(ActiveDrug);
@@ -191,7 +191,7 @@ public sealed class StockBatchServiceTests
     {
         var request = new ReceiveStockRequest(
             Guid.Empty, Guid.Empty, string.Empty,
-            DateOnly.MinValue, 0, -1m, null);
+            DateOnly.MinValue, 0, 0, -1m, null);
 
         _validation.ValidateAsync(request, default)
             .Returns(Result.Fail(ResultError.Validation(
@@ -211,7 +211,7 @@ public sealed class StockBatchServiceTests
     public async Task AdjustAsync_WhenValid_UpdatesBatchAndReturnsDto()
     {
         var batch = MakeBatch();
-        var request = new AdjustStockRequest(80, 18.00m, DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)));
+        var request = new AdjustStockRequest(80, 18.00m, DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)), 0);
 
         _validation.ValidateAsync(request, default).Returns(Result.Ok());
         _repo.GetByIdAsync(batch.Id, default).Returns(batch);
@@ -228,7 +228,7 @@ public sealed class StockBatchServiceTests
     public async Task AdjustAsync_WhenBatchNotFound_ReturnsNotFoundError()
     {
         var id = Guid.NewGuid();
-        var request = new AdjustStockRequest(80, 18.00m, DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)));
+        var request = new AdjustStockRequest(80, 18.00m, DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)), 0);
 
         _validation.ValidateAsync(request, default).Returns(Result.Ok());
         _repo.GetByIdAsync(id, default).Returns((StockBatch?)null);
@@ -296,6 +296,7 @@ public sealed class StockBatchServiceTests
             "LOT-001",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
             100,
+            0,
             10.00m,
             15.00m,
             DateTime.UtcNow);

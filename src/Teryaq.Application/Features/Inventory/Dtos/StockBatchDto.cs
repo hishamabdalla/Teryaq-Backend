@@ -13,6 +13,7 @@ using Teryaq.Domain.Features.Inventory;
 /// <param name="ExpiryDate">Expiry date of this lot.</param>
 /// <param name="QuantityReceived">Original quantity received — immutable record.</param>
 /// <param name="QuantityOnHand">Current units on hand.</param>
+/// <param name="ReorderLevel">Minimum on-hand quantity before a low-stock alert is raised; zero means no alert.</param>
 /// <param name="CostPrice">Purchase cost per unit in Egyptian pounds.</param>
 /// <param name="SellingPrice">Per-unit selling price in Egyptian pounds.</param>
 /// <param name="ReceivedAt">UTC timestamp when the batch was physically received.</param>
@@ -29,6 +30,7 @@ public sealed record StockBatchDto(
     DateOnly ExpiryDate,
     int QuantityReceived,
     int QuantityOnHand,
+    int ReorderLevel,
     decimal CostPrice,
     decimal SellingPrice,
     DateTime ReceivedAt,

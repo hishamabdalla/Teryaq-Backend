@@ -11,5 +11,6 @@ public sealed class AdjustStockRequestValidator : AbstractValidator<AdjustStockR
     {
         RuleFor(x => x.QuantityOnHand).GreaterThanOrEqualTo(0);
         RuleFor(x => x.SellingPrice).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.ReorderLevel).GreaterThanOrEqualTo(0);
     }
 }

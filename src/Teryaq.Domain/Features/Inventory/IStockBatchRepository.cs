@@ -32,4 +32,24 @@ public interface IStockBatchRepository : IRepository<StockBatch>
         int skip,
         int take,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns all non-empty batches whose <see cref="StockBatch.ExpiryDate"/> is on or before
+    /// <paramref name="expiringOnOrBefore"/>, with <c>Drug</c> and <c>Branch</c> navigation properties
+    /// eagerly loaded. Results are ordered by <see cref="StockBatch.ExpiryDate"/> ascending (most urgent first).
+    /// </summary>
+    /// <param name="branchId">Optional branch filter; when <see langword="null"/> all branches are included.</param>
+    /// <param name="expiringOnOrBefore">Upper-bound expiry date (inclusive).</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<IReadOnlyList<StockBatch>> GetNearExpiryAsync(Guid? branchId, DateOnly expiringOnOrBefore, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns all batches where <see cref="StockBatch.ReorderLevel"/> is greater than zero and
+    /// <see cref="StockBatch.QuantityOnHand"/> is at or below <see cref="StockBatch.ReorderLevel"/>,
+    /// with <c>Drug</c> and <c>Branch</c> navigation properties eagerly loaded.
+    /// Results are ordered by <see cref="StockBatch.QuantityOnHand"/> ascending (most critical first).
+    /// </summary>
+    /// <param name="branchId">Optional branch filter; when <see langword="null"/> all branches are included.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<IReadOnlyList<StockBatch>> GetLowStockAsync(Guid? branchId, CancellationToken ct = default);
 }

@@ -16,6 +16,7 @@ public sealed class ReceiveStockRequestValidator : AbstractValidator<ReceiveStoc
             .Must(date => date > DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage("Expiry date must be a future date.");
         RuleFor(x => x.Quantity).GreaterThan(0);
+        RuleFor(x => x.ReorderLevel).GreaterThanOrEqualTo(0);
         RuleFor(x => x.CostPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.SellingPrice)
             .GreaterThanOrEqualTo(0)

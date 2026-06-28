@@ -28,6 +28,13 @@ public sealed class StockBatch : BaseEntity, ITenantEntity
     /// <summary>Gets the current number of units on hand; decremented by POS dispensing.</summary>
     public int QuantityOnHand { get; private set; }
 
+    /// <summary>Gets the minimum on-hand quantity before this batch is flagged as low-stock. Zero means no alert is set.</summary>
+    public int ReorderLevel { get; private set; }
+
+    /// <summary>Gets a value indicating whether on-hand stock has fallen to or below the reorder level.</summary>
+    /// <remarks>Returns <see langword="false"/> when <see cref="ReorderLevel"/> is zero (alert disabled).</remarks>
+    public bool IsLowStock => ReorderLevel > 0 && QuantityOnHand <= ReorderLevel;
+
     /// <summary>Gets the purchase cost per unit in Egyptian pounds.</summary>
     public decimal CostPrice { get; private set; }
 
@@ -52,6 +59,7 @@ public sealed class StockBatch : BaseEntity, ITenantEntity
     /// <param name="batchNumber">Supplier lot number.</param>
     /// <param name="expiryDate">Expiry date of this lot.</param>
     /// <param name="quantity">Number of units received.</param>
+    /// <param name="reorderLevel">Minimum on-hand quantity before a low-stock alert is raised; use 0 to disable alerts for this batch.</param>
     /// <param name="costPrice">Purchase cost per unit.</param>
     /// <param name="sellingPrice">Per-unit selling price.</param>
     /// <param name="receivedAt">UTC timestamp when the lot was physically received.</param>
@@ -61,6 +69,7 @@ public sealed class StockBatch : BaseEntity, ITenantEntity
         string batchNumber,
         DateOnly expiryDate,
         int quantity,
+        int reorderLevel,
         decimal costPrice,
         decimal sellingPrice,
         DateTime receivedAt) =>
@@ -72,20 +81,23 @@ public sealed class StockBatch : BaseEntity, ITenantEntity
             ExpiryDate = expiryDate,
             QuantityReceived = quantity,
             QuantityOnHand = quantity,
+            ReorderLevel = reorderLevel,
             CostPrice = costPrice,
             SellingPrice = sellingPrice,
             ReceivedAt = receivedAt,
         };
 
-    /// <summary>Applies corrections to on-hand quantity, selling price, or expiry date.</summary>
+    /// <summary>Applies corrections to on-hand quantity, selling price, expiry date, or reorder level.</summary>
     /// <param name="quantityOnHand">Corrected quantity on hand (e.g. after a physical count).</param>
     /// <param name="sellingPrice">Updated per-unit selling price.</param>
     /// <param name="expiryDate">Corrected expiry date.</param>
-    public void Adjust(int quantityOnHand, decimal sellingPrice, DateOnly expiryDate)
+    /// <param name="reorderLevel">Updated minimum on-hand threshold for low-stock alerts; use 0 to disable.</param>
+    public void Adjust(int quantityOnHand, decimal sellingPrice, DateOnly expiryDate, int reorderLevel)
     {
         QuantityOnHand = quantityOnHand;
         SellingPrice = sellingPrice;
         ExpiryDate = expiryDate;
+        ReorderLevel = reorderLevel;
     }
 
     /// <summary>Decrements on-hand quantity when units are dispensed at the POS.</summary>
