@@ -7,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using Teryaq.Application.Common.Tenancy;
 using Teryaq.Domain.Common;
 using Teryaq.Domain.Features.Branches;
+using Teryaq.Domain.Features.Customers;
 using Teryaq.Domain.Features.Drugs;
 using Teryaq.Domain.Features.Inventory;
+using Teryaq.Domain.Features.Sales;
 using Teryaq.Domain.Features.Tenants;
 using Teryaq.Infrastructure.Identity;
 
@@ -35,6 +37,18 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRo
 
     /// <summary>Gets the stock batches table.</summary>
     public DbSet<StockBatch> StockBatches => Set<StockBatch>();
+
+    /// <summary>Gets the stock movements audit table.</summary>
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
+    /// <summary>Gets the customers table.</summary>
+    public DbSet<Customer> Customers => Set<Customer>();
+
+    /// <summary>Gets the POS sales table.</summary>
+    public DbSet<Sale> Sales => Set<Sale>();
+
+    /// <summary>Gets the POS sale lines table.</summary>
+    public DbSet<SaleLine> SaleLines => Set<SaleLine>();
 
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder builder)

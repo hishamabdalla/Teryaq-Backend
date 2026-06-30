@@ -99,4 +99,16 @@ public sealed class StockBatchRepository : GenericRepository<StockBatch>, IStock
             .OrderBy(b => b.QuantityOnHand)
             .ToListAsync(ct);
     }
+
+    /// <inheritdoc/>
+    public async Task<List<StockBatch>> GetDispensableBatchesAsync(
+        Guid branchId,
+        Guid drugId,
+        DateOnly today,
+        CancellationToken ct = default) =>
+        await Context.Set<StockBatch>()
+            .AsTracking()
+            .Where(b => b.BranchId == branchId && b.DrugId == drugId && b.QuantityOnHand > 0 && b.ExpiryDate > today)
+            .OrderBy(b => b.ExpiryDate)
+            .ToListAsync(ct);
 }

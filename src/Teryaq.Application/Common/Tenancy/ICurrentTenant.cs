@@ -8,4 +8,7 @@ public interface ICurrentTenant
 
     /// <summary>Gets the current branch identifier, or <see langword="null"/> when the token carries no branch claim.</summary>
     Guid? BranchId { get; }
+
+    /// <summary>Gets the current authenticated user identifier, or <see langword="null"/> when there is no authenticated HTTP context.</summary>
+    Guid? UserId { get; }
 }

@@ -52,4 +52,16 @@ public interface IStockBatchRepository : IRepository<StockBatch>
     /// <param name="branchId">Optional branch filter; when <see langword="null"/> all branches are included.</param>
     /// <param name="ct">Cancellation token.</param>
     Task<IReadOnlyList<StockBatch>> GetLowStockAsync(Guid? branchId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns all non-expired, non-empty batches for the given drug at the given branch,
+    /// <em>with change-tracking enabled</em> so that callers can call <see cref="StockBatch.Dispense"/>
+    /// and the changes are persisted on the next <c>SaveChanges</c>. Results are ordered by
+    /// <see cref="StockBatch.ExpiryDate"/> ascending (FEFO — first-expired-first-out).
+    /// </summary>
+    /// <param name="branchId">Branch to dispense from.</param>
+    /// <param name="drugId">Drug to dispense.</param>
+    /// <param name="today">Today's date; batches expiring on or before this date are excluded.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<List<StockBatch>> GetDispensableBatchesAsync(Guid branchId, Guid drugId, DateOnly today, CancellationToken ct = default);
 }

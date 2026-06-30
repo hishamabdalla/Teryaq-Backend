@@ -33,4 +33,16 @@ public sealed class CurrentTenantService : ICurrentTenant
             return claim is not null && Guid.TryParse(claim.Value, out var id) ? id : null;
         }
     }
+
+    /// <inheritdoc/>
+    public Guid? UserId
+    {
+        get
+        {
+            // JsonWebTokenHandler (default in .NET 8+) keeps "sub" as-is without mapping it
+            // to ClaimTypes.NameIdentifier, so we look up the raw JWT claim name directly.
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst("sub");
+            return claim is not null && Guid.TryParse(claim.Value, out var id) ? id : null;
+        }
+    }
 }

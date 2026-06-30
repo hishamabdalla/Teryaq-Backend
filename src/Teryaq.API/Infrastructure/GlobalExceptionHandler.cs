@@ -1,4 +1,4 @@
-﻿namespace Teryaq.API.Infrastructure;
+namespace Teryaq.API.Infrastructure;
 
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
