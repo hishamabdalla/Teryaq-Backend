@@ -1,6 +1,6 @@
 # Teryaq — ترياق
 
-**Cloud pharmacy management SaaS for Egypt and the Gulf.**
+**Cloud pharmacy management SaaS for Egypt and  the Gulf.**
 
 > *ترياق* — Arabic for *antidote / theriac*. The classic word for a universal remedy.
 
